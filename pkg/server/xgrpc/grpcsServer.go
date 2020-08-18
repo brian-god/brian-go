@@ -76,7 +76,7 @@ func (s *Server) Serve() error {
 		return nil
 	}
 	//打印输出grpc服务启动成功
-	fmt.Printf("⇨ grpc server started on %s", s.Config.Address())
+	s.logger.Info("⇨ grpc server started on %s", s.Config.Address())
 	return err
 }
 
