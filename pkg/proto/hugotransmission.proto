@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option go_package = ".;xgrpc";
+package hugo_grpc;
+//option java_outer_classname = "GoodsDto";
+
+// The greeting service definition.
+/*service Simple {
+    // Sends a greeting
+    rpc SayHello (HelloRequest) returns (HelloReply) {
+    }
+}*/
+/*
+   proto3取消了required和optional两个关键字
+    repeated用来定义数组
+ */
+// The request message containing
+
+// 设置默认的请求数据传输
+message HugoRequest {
+    //请求id
+    string requestId =1;
+    //接口名称
+    string interfaceName =2;
+    //方法名称
+    string methodName =3;
+    //方法参数 repeated 定义类似集合
+    //map<string, Bar>  parameters = 4;
+    //参数类型 repeated 定义类似集合
+    //repeated string paramTypes =5;
+    //map<string, Bar>  paramTypes = 5;
+    //方法参数 repeated 定义类似集合
+    repeated string parameters = 4;
+    //参数类型 repeated 定义类似集合
+    repeated string paramTypes =5;
+}
+
+// The response message containing the greetings
+// 设置默认的返回
+message HugoResponse {
+    //请求id
+    string requestId =1;
+    //返回的结果默认是200，成功
+    sint32 code = 2;
+    //消息默认是成功
+    string message = 3;
+    //数据默认是null
+    string data =4;
+}
