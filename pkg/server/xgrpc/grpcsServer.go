@@ -70,13 +70,13 @@ func newServer(config *Config) *Server {
 // Server implements server.Server interface.
 //服务，实现服务和接口
 func (s *Server) Serve() error {
+	//打印输出grpc服务启动成功
+	s.colorer.Println(fmt.Sprintf("⇨ grpc server started on %s", s.colorer.Green(s.Config.Address())))
 	//开启grpc服务
 	err := s.Server.Serve(s.listener)
 	if err == grpc.ErrServerStopped {
 		return nil
 	}
-	//打印输出grpc服务启动成功
-	s.logger.Info("⇨ grpc server started on %s", s.Config.Address())
 	return err
 }
 
@@ -131,6 +131,7 @@ func (s *Server) Register(in interface{}, srv interface{}) {
 	}
 	//定义服务调用的地址
 	stype := fmt.Sprintf("%s.%s.Grpc", elem.PkgPath(), elem.Name())
+	s.logger.Info(fmt.Sprintf("rpc add server [path:/%s]", stype))
 	//服务处理
 	var _Grpc_ServiceDesc = grpc.ServiceDesc{
 		ServiceName: stype,

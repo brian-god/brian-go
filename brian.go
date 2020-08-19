@@ -2,11 +2,11 @@ package brian
 
 import (
 	"context"
-	"fmt"
 	"github.com/brian-god/brian-go/pkg/group"
 	"github.com/brian-god/brian-go/pkg/server"
 	"github.com/brian-god/brian-go/pkg/utils/xgo"
 	"github.com/brian-god/brian-go/pkg/worker"
+	"github.com/labstack/gommon/color"
 	"golang.org/x/sync/errgroup"
 	"net/http"
 	"sync"
@@ -28,6 +28,7 @@ type Application struct {
 	defers       []func() error
 
 	governor *http.Server
+	colorer  *color.Color
 }
 
 // 初始化应用
@@ -38,6 +39,11 @@ func (app *Application) initialize() {
 		app.signalHooker = hookSignals
 		app.defers = []func() error{}
 	})
+}
+
+// 获取默认的应用
+func DefaultApplication() *Application {
+	return &Application{colorer: color.New()}
 }
 
 // 启动应用内部方法
@@ -237,6 +243,9 @@ func (app *Application) printBanner() error {
 
 	Welcome to hugo, starting application ...
 	`*/
-	fmt.Printf("%s\n", banner)
+	if app.colorer == nil {
+		app.colorer = color.New()
+	}
+	app.colorer.Printf("%s\n", app.colorer.Blue(banner))
 	return nil
 }

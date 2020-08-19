@@ -1,15 +1,17 @@
-package brian
+package main
 
 import (
 	"cloud.google.com/go/trace/testdata/helloworld"
 	"context"
 	"fmt"
+	"github.com/brian-god/brian-go"
+	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
-var ser = Application{}
+var ser = brian.Application{}
 
 //构建一个controller
 
@@ -56,16 +58,18 @@ func Hello() error {
 
 //rpc服务
 func serveGRPC() error {
-	//获取grpc服务
-	//grpcServer  := xgrpc.DefaultConfig().Build()
-	return nil
+	//获取一个grpc服务
+	grpcServer := xgrpc.DefaultConfig().Build()
+	grpcServer.Register(new(TestApi), new(TestApiImpl))
+	//注册服务
+	return ser.Serve(grpcServer)
 }
 func serverHTTP() error {
 	httpServer := xhttp.StdConfig("http").Build()
 	//使用
 	httpServer.UseController(&TestController{})
 	//启动服务
-	httpServer.Serve()
+	ser.Serve(httpServer)
 	return nil
 }
 
@@ -78,4 +82,16 @@ func (g Greeter) SayHello(context context.Context, request *helloworld.HelloRequ
 	return &helloworld.HelloReply{
 		Message: "Hello Jupiter",
 	}, nil
+}
+
+type TestApi interface {
+	SayHello(name string) string
+}
+type TestApiImpl struct {
+}
+
+// SayHello
+// TODO rpc接口的实现必须使用值接收者不能够使用指针接收者，使用指针接收者会造成结构体是否实现接口的判断出错
+func (test TestApiImpl) SayHello(name string) string {
+	return fmt.Sprintf("hell %s", name)
 }

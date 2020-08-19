@@ -2,6 +2,7 @@ package xgrpc
 
 import (
 	"fmt"
+	"github.com/labstack/gommon/color"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -35,7 +36,7 @@ type Config struct {
 	serverOptions             []grpc.ServerOption
 	streamInterceptors        []grpc.StreamServerInterceptor
 	unaryInterceptors         []grpc.UnaryServerInterceptor
-
+	colorer                   *color.Color
 	//TODO 日志
 	logger *logrus.Logger
 }
@@ -53,6 +54,7 @@ func DefaultConfig() *Config {
 		DisableTrace:              true,
 		SlowQueryThresholdInMilli: 500,
 		logger:                    logrus.New(),
+		colorer:                   color.New(),
 		serverOptions:             []grpc.ServerOption{},
 		//流方法，流拦截器
 		streamInterceptors: []grpc.StreamServerInterceptor{},
