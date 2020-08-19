@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/brian-god/brian-go/pkg/group"
 	"github.com/brian-god/brian-go/pkg/server"
+	"github.com/brian-god/brian-go/pkg/server/xgrpc"
+	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/brian-god/brian-go/pkg/utils/xgo"
 	"github.com/brian-god/brian-go/pkg/worker"
 	"github.com/labstack/gommon/color"
@@ -29,6 +31,9 @@ type Application struct {
 
 	governor *http.Server
 	colorer  *color.Color
+
+	httpServer *xhttp.Server
+	rpcServer  *xgrpc.Server
 }
 
 // 初始化应用
@@ -43,7 +48,35 @@ func (app *Application) initialize() {
 
 // 获取默认的应用
 func DefaultApplication() *Application {
-	return &Application{colorer: color.New()}
+	app := &Application{colorer: color.New()}
+	//打印logo
+	app.printBanner()
+	app.serveGRPC()
+	app.serverHTTP()
+	return app
+}
+
+//rpc服务
+func (app *Application) serveGRPC() {
+	//获取一个grpc服务
+	rpcServer := xgrpc.DefaultConfig().Build()
+	app.rpcServer = rpcServer
+}
+
+// RegisterRpcServer 注册rpc服务
+func (app *Application) RegisterRpcServer(in interface{}, srv interface{}) {
+	app.rpcServer.Register(in, srv)
+}
+
+//RegisterController 注册controller
+func (app *Application) RegisterController(con xhttp.Controller) {
+	app.httpServer.UseController(con)
+}
+
+//http服务
+func (app *Application) serverHTTP() {
+	httpServer := xhttp.StdConfig("http").Build()
+	app.httpServer = httpServer
 }
 
 // 启动应用内部方法
@@ -51,7 +84,7 @@ func (app *Application) startup() (err error) {
 	//执行注入的函数
 	app.startupOnce.Do(func() {
 		err = xgo.SerialUntilError(
-			app.printBanner,
+		//放入执行的函数
 		)()
 	})
 	return
@@ -80,10 +113,19 @@ func (app *Application) GracefulStop(ctx context.Context) (err error) {
 		if err != nil {
 			app.logger.Error("graceful stop governor close err", xlog.FieldMod(ecode.ModApp), xlog.FieldErr(err))
 		}*/
-		if err != nil {
-
-		}
 		var eg errgroup.Group
+		//停止http服务
+		if app.httpServer != nil {
+			eg.Go(func() error {
+				return app.httpServer.GracefulStop(ctx)
+			})
+		}
+		//停止rpc服务
+		if app.rpcServer != nil {
+			eg.Go(func() error {
+				return app.rpcServer.GracefulStop(ctx)
+			})
+		}
 		for _, s := range app.servers {
 			s := s
 			eg.Go(func() error {
@@ -109,6 +151,14 @@ func (app *Application) Stop() (err error) {
 			app.logger.Error("stop governor close err", xlog.FieldMod(ecode.ModApp), xlog.FieldErr(err))
 		}*/
 		var eg errgroup.Group
+		//停止http服务
+		if app.httpServer != nil {
+			eg.Go(app.httpServer.Stop)
+		}
+		//停止rpc服务
+		if app.rpcServer != nil {
+			eg.Go(app.rpcServer.Stop)
+		}
 		for _, s := range app.servers {
 			s := s
 			eg.Go(s.Stop)
@@ -165,6 +215,18 @@ func (app *Application) startWorkers() error {
 // 启动服务
 func (app *Application) startServers() error {
 	var eg errgroup.Group
+	//启动http服务
+	if app.httpServer != nil {
+		eg.Go(func() (err error) {
+			return app.httpServer.Serve()
+		})
+	}
+	//启动rpc服务
+	if app.rpcServer != nil {
+		eg.Go(func() (err error) {
+			return app.rpcServer.Serve()
+		})
+	}
 	//xgo.ParallelWithErrorChan()
 	// start multi servers
 	for _, s := range app.servers {
