@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/brian-god/brian-go"
+	"github.com/brian-god/brian-go/pkg/conf"
 	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"os"
 )
 
 var ser = brian.Application{}
@@ -28,7 +30,9 @@ func (test *TestController) index(ctx echo.Context) error {
 }
 
 func main() {
-
+	dir, _ := os.Getwd()
+	out := conf.InitConfig(fmt.Sprintf("%s/test/appliction.properties", dir))
+	fmt.Println(out)
 	/*r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -46,10 +50,10 @@ func main() {
 	}
 	server.Serve(lis)*/
 
-	if err := ser.Startup(serverHTTP, serveGRPC); err != nil {
+	/*if err := ser.Startup(serverHTTP, serveGRPC); err != nil {
 		fmt.Println("启动有误")
 	}
-	ser.Run()
+	ser.Run()*/
 }
 func Hello() error {
 	fmt.Printf("你好")
