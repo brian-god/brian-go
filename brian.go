@@ -14,6 +14,7 @@ import (
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/brian-god/brian-go/pkg/utils/xgo"
 	"github.com/brian-god/brian-go/pkg/worker"
+	"github.com/brian-god/brian-go/pkg/xcast"
 	"github.com/brian-god/brian-go/pkg/xcodec"
 	"github.com/brian-god/brian-go/pkg/xfile"
 	"github.com/brian-god/brian-go/pkg/xflag"
@@ -60,8 +61,7 @@ func (app *Application) initialize() {
 
 // 获取默认的应用
 func DefaultApplication() *Application {
-	//日志初始化
-	initLogger()
+	//开始使用默认的
 	app := &Application{colorer: color.New(), logger: logrus.New()}
 	//打印logo
 	app.printBanner()
@@ -104,17 +104,24 @@ func (app *Application) startup() (err error) {
 	//执行注入的函数
 	app.startupOnce.Do(func() {
 		err = xgo.SerialUntilError(
-		//放入执行的函数
+			//放入执行的函数
+			app.initLogger,
 		)()
 	})
 	return
 }
 
-func initLogger() error {
-	//设置默认的日志登记
+func (app *Application) initLogger() error {
 	logrus.SetOutput(os.Stdout)
-	//设置最低loglevel
-	logrus.SetLevel(logrus.DebugLevel)
+	//日志级别
+	if v := conf.Get("brian.application.log.level"); v != nil {
+		if v, err := xcast.ToStringE(v); nil == err {
+			if level, err := logrus.ParseLevel(v); nil == err {
+				logrus.SetLevel(level)
+			}
+		}
+	}
+	logrus.Debug("debug 日志")
 	return nil
 }
 

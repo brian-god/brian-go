@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/brian-god/brian-go"
-	"github.com/brian-god/brian-go/pkg/conf"
 	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/labstack/echo/v4"
@@ -65,8 +64,6 @@ func runApp() {
 	if err := app.Startup(); err != nil {
 		fmt.Println("启动有误")
 	}
-	host := conf.Get("spring.redis.host")
-	fmt.Println(host)
 	app.Run()
 }
 func Hello() error {

@@ -75,6 +75,14 @@ func RawConfig(key string) *Config {
 			config.SlowQueryThresholdInMilli = v
 		}
 	}
+	//日志级别
+	if v := conf.Get("brian.http.server.log.level"); v != nil {
+		if v, err := xcast.ToStringE(v); nil == err {
+			if level, err := logrus.ParseLevel(v); nil == err {
+				config.logger.Level = level
+			}
+		}
+	}
 	return config
 }
 
