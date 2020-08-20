@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/brian-god/brian-go"
+	"github.com/brian-god/brian-go/pkg/conf"
 	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/labstack/echo/v4"
@@ -28,18 +29,9 @@ func (test *TestController) index(ctx echo.Context) error {
 }
 
 func main() {
-	app := brian.DefaultApplication()
-	//注册rpc服务
-	app.RegisterRpcServer(new(TestApi), new(TestApiImpl))
-	//注册http controller
-	app.RegisterController(&TestController{})
-	if err := app.Startup(); err != nil {
-		fmt.Println("启动有误")
-	}
-	app.Run()
-	/*dir, _ := os.Getwd()
-	out := conf.InitConfig(fmt.Sprintf("%s/test/appliction.properties", dir))
-	fmt.Println(out)*/
+	//dir, _ := os.Getwd()
+	//out := conf.InitConfig(fmt.Sprintf("%s/resources/application.properties", dir))
+	//fmt.Println(out)
 	/*r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -61,6 +53,21 @@ func main() {
 		fmt.Println("启动有误")
 	}
 	ser.Run()*/
+	runApp()
+}
+
+func runApp() {
+	app := brian.DefaultApplication()
+	//注册rpc服务
+	app.RegisterRpcServer(new(TestApi), new(TestApiImpl))
+	//注册http controller
+	app.RegisterController(&TestController{})
+	if err := app.Startup(); err != nil {
+		fmt.Println("启动有误")
+	}
+	host := conf.Get("spring.redis.host")
+	fmt.Println(host)
+	app.Run()
 }
 func Hello() error {
 	fmt.Printf("你好")

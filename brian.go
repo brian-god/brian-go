@@ -2,24 +2,36 @@ package brian
 
 import (
 	"context"
+	"fmt"
+	"github.com/BurntSushi/toml"
+	"github.com/brian-god/brian-go/pkg/conf"
+	file_datasource "github.com/brian-god/brian-go/pkg/datasource/file"
+	http_datasource "github.com/brian-god/brian-go/pkg/datasource/http"
 	"github.com/brian-god/brian-go/pkg/group"
+	"github.com/brian-god/brian-go/pkg/logger"
 	"github.com/brian-god/brian-go/pkg/server"
 	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/brian-god/brian-go/pkg/utils/xgo"
 	"github.com/brian-god/brian-go/pkg/worker"
+	"github.com/brian-god/brian-go/pkg/xcodec"
+	"github.com/brian-god/brian-go/pkg/xfile"
+	"github.com/brian-god/brian-go/pkg/xflag"
 	"github.com/labstack/gommon/color"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 )
 
 // Application is the framework's instance, it contains the servers, workers, client and configuration settings.
 // Create an instance of Application, by using &Application{}
 type Application struct {
-	servers []server.Server
-	workers []worker.Worker
-	//logger  *xlog.Logger
+	servers     []server.Server
+	workers     []worker.Worker
+	logger      *logrus.Logger
 	stopOnce    sync.Once
 	initOnce    sync.Once
 	startupOnce sync.Once
@@ -48,19 +60,26 @@ func (app *Application) initialize() {
 
 // 获取默认的应用
 func DefaultApplication() *Application {
-	app := &Application{colorer: color.New()}
+	//日志初始化
+	initLogger()
+	app := &Application{colorer: color.New(), logger: logrus.New()}
 	//打印logo
 	app.printBanner()
-	app.serveGRPC()
+	//加载配置
+	app.loadConfig()
+	//创建http服务
 	app.serverHTTP()
+	//创建rpc服务
+	app.serveGRPC()
 	return app
 }
 
 //rpc服务
-func (app *Application) serveGRPC() {
+func (app *Application) serveGRPC() error {
 	//获取一个grpc服务
-	rpcServer := xgrpc.DefaultConfig().Build()
+	rpcServer := xgrpc.StdConfig().Build()
 	app.rpcServer = rpcServer
+	return nil
 }
 
 // RegisterRpcServer 注册rpc服务
@@ -74,9 +93,10 @@ func (app *Application) RegisterController(con xhttp.Controller) {
 }
 
 //http服务
-func (app *Application) serverHTTP() {
+func (app *Application) serverHTTP() error {
 	httpServer := xhttp.StdConfig("http").Build()
 	app.httpServer = httpServer
+	return nil
 }
 
 // 启动应用内部方法
@@ -88,6 +108,14 @@ func (app *Application) startup() (err error) {
 		)()
 	})
 	return
+}
+
+func initLogger() error {
+	//设置默认的日志登记
+	logrus.SetOutput(os.Stdout)
+	//设置最低loglevel
+	logrus.SetLevel(logrus.DebugLevel)
+	return nil
 }
 
 //提供外部启动应用执行
@@ -263,6 +291,56 @@ func (app *Application) Serve(s server.Server) error {
 	return nil
 }
 
+//加载配置
+func (app *Application) loadConfig() error {
+	var (
+		watchConfig = xflag.Bool("watch")
+		configAddr  = xflag.String("config")
+	)
+
+	if configAddr == "" {
+		app.logger.Warn("no config ... read default config")
+		//为空则读取默认文件
+		//优先级
+		//botostrop.yml
+		//application.yml
+		//application.properties
+		dir, _ := os.Getwd()
+		ok, _ := xfile.PathExists(fmt.Sprintf("%s/resources/botostrop.yml", dir))
+		if !ok {
+			ok, _ = xfile.PathExists(fmt.Sprintf("%s/resources/application.yml", dir))
+			if !ok {
+				ok, _ = xfile.PathExists(fmt.Sprintf("%s/resources/application.properties", dir))
+				if !ok {
+					return nil
+				} else {
+					configAddr = fmt.Sprintf("%s/resources/application.properties", dir)
+				}
+			} else {
+				configAddr = fmt.Sprintf("%s/resources/application.yml", dir)
+			}
+		} else {
+			configAddr = fmt.Sprintf("%s/botostrop.yml", dir)
+		}
+	}
+	switch {
+	case strings.HasPrefix(configAddr, "http://"),
+		strings.HasPrefix(configAddr, "https://"):
+		provider := http_datasource.NewDataSource(configAddr, watchConfig)
+		if err := conf.LoadFromDataSource(provider, toml.Unmarshal); err != nil {
+			app.logger.Panic("load remote config ", logger.FieldMod(xcodec.ModConfig), logger.FieldErrKind(xcodec.ErrKindUnmarshalConfigErr), logger.FieldErr(err))
+		}
+		app.logger.Info("load remote config ", logger.FieldMod(xcodec.ModConfig), logger.FieldAddr(configAddr))
+	default:
+		provider := file_datasource.NewDataSource(configAddr, watchConfig)
+
+		if err := conf.LoadFromDataSource(provider, conf.UnmarshallerKeyAndValue); err != nil {
+			app.logger.Panic("load local file ", logger.FieldMod(xcodec.ModConfig), logger.FieldErrKind(xcodec.ErrKindUnmarshalConfigErr), logger.FieldErr(err))
+		}
+		app.logger.Info("load local file ", logger.FieldMod(xcodec.ModConfig), logger.FieldAddr(configAddr))
+	}
+	return nil
+}
 func (app *Application) printBanner() error {
 	const banner = `
 	          _____                    _____                    _____                   _______

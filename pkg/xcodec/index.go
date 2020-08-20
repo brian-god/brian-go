@@ -37,6 +37,26 @@ const (
 	ErrServerException = "调用服务端异常"
 )
 
+// 统一模块信息
+const (
+	// ModConfig ...
+	ModConfig = "config"
+	// ModApp ...
+	ModApp = "app"
+	// ModProc ...
+	ModProc = "proc"
+	// ModGrpcServer ...
+	ModGrpcServer = "server.grpc"
+	// ModRegistryETCD ...
+	ModRegistryETCD = "registry.etcd"
+	// ModClientETCD ...
+	ModClientETCD = "client.etcd"
+	// ModClientGrpc ...
+	ModClientGrpc = "client.grpc"
+	// ModClientMySQL ...
+	ModClientMySQL = "client.mysql"
+)
+
 // UnmarshalByType 反序列化根据类型
 //Struct
 //	Map

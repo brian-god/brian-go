@@ -2,6 +2,8 @@ package xgrpc
 
 import (
 	"fmt"
+	"github.com/brian-god/brian-go/pkg/conf"
+	"github.com/brian-god/brian-go/pkg/xcast"
 	"github.com/labstack/gommon/color"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -18,7 +20,7 @@ import (
  * @updateDate           2020/8/4 3:17 下午
  * @version              1.0
 **/
-
+// TODO 日志需要单独处理
 //Grpc 的配置结构体
 type Config struct {
 	Host string
@@ -61,6 +63,53 @@ func DefaultConfig() *Config {
 		//grpc中使用一元拦截器
 		unaryInterceptors: []grpc.UnaryServerInterceptor{},
 	}
+}
+
+// hugo Standard HTTP Server config
+func StdConfig() *Config {
+	return RawConfig()
+}
+
+// RawConfig ...
+func RawConfig() *Config {
+	var config = DefaultConfig()
+	//协议
+	if v := conf.Get("brian.rpc.server.Network"); v != nil {
+		if v, err := xcast.ToStringE(v); nil == err {
+			config.Network = v
+		}
+	}
+	//端口
+	if v := conf.Get("brian.rpc.server.port"); v != nil {
+		if intValue, err := xcast.ToIntE(v); nil == err {
+			config.Port = intValue
+		}
+	}
+	//ip
+	if v := conf.Get("brian.rpc.server.host"); v != nil {
+		if v, err := xcast.ToStringE(v); nil == err {
+			config.Host = v
+		}
+	}
+	//监听
+	if v := conf.Get("brian.rpc.server.DisableMetric"); v != nil {
+		if v, err := xcast.ToBoolE(v); nil == err {
+			config.DisableMetric = v
+		}
+	}
+	//追踪
+	if v := conf.Get("brian.rpc.server.DisableTrace"); v != nil {
+		if v, err := xcast.ToBoolE(v); nil == err {
+			config.DisableTrace = v
+		}
+	}
+	//超时
+	if v := conf.Get("brian.rpc.server.timeout"); v != nil {
+		if v, err := xcast.ToInt64E(v); nil == err {
+			config.SlowQueryThresholdInMilli = v
+		}
+	}
+	return config
 }
 
 // Build ...

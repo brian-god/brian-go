@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"github.com/brian-god/brian-go/pkg/xcast"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
@@ -74,4 +75,7 @@ func NamedError(key string, err error) logrus.Fields {
 // inputs in other Field constructors.
 func Skip() logrus.Fields {
 	return logrus.Fields{"error": "未知异常"}
+}
+func Any(key string, value interface{}) logrus.Fields {
+	return String("key", xcast.ToString(value))
 }

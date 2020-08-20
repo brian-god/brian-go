@@ -3,9 +3,7 @@ package xhttp
 import (
 	"fmt"
 	"github.com/brian-god/brian-go/pkg/conf"
-	"github.com/brian-god/brian-go/pkg/logger"
-	"github.com/brian-god/brian-go/pkg/xcodec"
-	"github.com/pkg/errors"
+	"github.com/brian-god/brian-go/pkg/xcast"
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,9 +51,29 @@ func StdConfig(name string) *Config {
 // RawConfig ...
 func RawConfig(key string) *Config {
 	var config = DefaultConfig()
-	if err := conf.UnmarshalKey(key, &config); err != nil &&
-		errors.Cause(err) != conf.ErrInvalidKey {
-		config.logger.Panic("http server parse config panic", logger.FieldErrKind(xcodec.ErrKindUnmarshalConfigErr), logger.FieldErr(err), logger.FieldKey(key))
+	//端口
+	if v := conf.Get("brian.http.server.port"); v != nil {
+		if v, err := xcast.ToIntE(v); nil == err {
+			config.Port = v
+		}
+	}
+	//ip
+	if v := conf.Get("brian.http.server.host"); v != nil {
+		if v, err := xcast.ToStringE(v); nil == err {
+			config.Host = v
+		}
+	}
+	//debug
+	if v := conf.Get("brian.http.server.debug"); v != nil {
+		if v, err := xcast.ToBoolE(v); nil == err {
+			config.Debug = v
+		}
+	}
+	//超时
+	if v := conf.Get("brian.http.server.timeout"); v != nil {
+		if v, err := xcast.ToInt64E(v); nil == err {
+			config.SlowQueryThresholdInMilli = v
+		}
 	}
 	return config
 }
