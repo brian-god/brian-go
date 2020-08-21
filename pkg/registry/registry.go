@@ -32,3 +32,26 @@ type Registry interface {
 	DeregisterService(context.Context, *server.ServiceInfo) error
 	io.Closer
 }
+
+// Nop registry, used for local development/debugging
+// 用于本地开发 不进行注册
+type Nop struct{}
+
+// RegisterService ...
+func (n Nop) RegisterService(context.Context, *server.ServiceInfo) error { return nil }
+
+// DeregisterService ...
+func (n Nop) DeregisterService(context.Context, *server.ServiceInfo) error { return nil }
+
+// Close ...
+func (n Nop) Close() error { return nil }
+
+// Configuration ...
+type Configuration struct {
+}
+
+// Rule ...
+type Rule struct {
+	Target  string
+	Pattern string
+}

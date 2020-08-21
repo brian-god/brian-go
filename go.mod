@@ -11,6 +11,7 @@ require (
 	github.com/labstack/echo/v4 v4.1.16 //一个微型的web框架
 	github.com/labstack/gommon v0.3.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect go结构体映射
+	github.com/nacos-group/nacos-sdk-go v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0 //日志框架
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
