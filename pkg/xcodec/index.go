@@ -55,6 +55,8 @@ const (
 	ModClientGrpc = "client.grpc"
 	// ModClientMySQL ...
 	ModClientMySQL = "client.mysql"
+	// ModRegistryNacos ...
+	ModRegistryNacos = "registry.nacos"
 )
 
 // UnmarshalByType 反序列化根据类型

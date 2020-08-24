@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/brian-god/brian-go/pkg/logger"
 	"github.com/brian-god/brian-go/pkg/server"
+	"github.com/brian-god/brian-go/pkg/xcodec"
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -26,16 +29,33 @@ import (
 
 type nacosRegistry struct {
 	//服务的client
-	client *naming_client.INamingClient
+	namingClient *naming_client.INamingClient
 	//客户端配置
 	conf *constant.ClientConfig
 	kvs  sync.Map
 	//服务配置
 	serConf *constant.ServerConfig
+	//logger
+	log *logrus.Logger
 }
 
-func newETCDRegistry(config *Config) *nacosRegistry {
-
+func newETCDRegistry(config *constant.ClientConfig,serverConfig *constant.ServerConfig) *nacosRegistry {
+	// Create naming client for service discovery
+	namingClient, err := clients.CreateNamingClient(map[string]interface{}{
+		"serverConfigs": serverConfig,
+		"clientConfig":  config,
+	})
+	if nil != err {
+		logrus.Panic(logger.FieldMod(xcodec.ErrKindRegisterErr),err.Error())
+	}
+	res := &nacosRegistry{
+		conf: config,
+		serConf: serverConfig,
+		namingClient: &namingClient,
+		log: logrus.New(),
+	}
+	res.log.Info(logger.FieldMod(xcodec.ModRegistryNacos))
+	return res
 }
 
 // RegisterService ...
