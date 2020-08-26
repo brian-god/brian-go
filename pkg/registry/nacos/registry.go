@@ -39,20 +39,20 @@ type nacosRegistry struct {
 	log *logrus.Logger
 }
 
-func newETCDRegistry(config *constant.ClientConfig,serverConfig *constant.ServerConfig) *nacosRegistry {
+func newETCDRegistry(config *constant.ClientConfig, serverConfig *constant.ServerConfig) *nacosRegistry {
 	// Create naming client for service discovery
 	namingClient, err := clients.CreateNamingClient(map[string]interface{}{
 		"serverConfigs": serverConfig,
 		"clientConfig":  config,
 	})
 	if nil != err {
-		logrus.Panic(logger.FieldMod(xcodec.ErrKindRegisterErr),err.Error())
+		logrus.Panic(logger.FieldMod(xcodec.ErrKindRegisterErr), err.Error())
 	}
 	res := &nacosRegistry{
-		conf: config,
-		serConf: serverConfig,
+		conf:         config,
+		serConf:      serverConfig,
 		namingClient: &namingClient,
-		log: logrus.New(),
+		log:          logrus.New(),
 	}
 	res.log.Info(logger.FieldMod(xcodec.ModRegistryNacos))
 	return res
@@ -61,7 +61,7 @@ func newETCDRegistry(config *constant.ClientConfig,serverConfig *constant.Server
 // RegisterService ...
 func (e *nacosRegistry) RegisterService(ctx context.Context, info *server.ServiceInfo) error {
 
-	return err
+	return nil
 }
 
 // DeregisterService ...
