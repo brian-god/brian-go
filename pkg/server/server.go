@@ -7,17 +7,19 @@ import (
 
 // ServiceInfo ...
 type ServiceInfo struct {
-	Name      string
-	Scheme    string
-	IP        string
-	Port      int
-	Weight    float64
-	Enable    bool
-	Healthy   bool
-	Metadata  map[string]string
-	Region    string
-	Zone      string
-	GroupName string
+	Name        string
+	Scheme      string
+	IP          string
+	Port        int
+	Weight      float64
+	Enable      bool
+	Healthy     bool
+	Ephemeral   bool
+	Metadata    map[string]string
+	Region      string
+	Zone        string
+	GroupName   string
+	ClusterName string
 }
 
 // Label ...

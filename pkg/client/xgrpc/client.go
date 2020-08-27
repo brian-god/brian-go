@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/xcodec"
 	"google.golang.org/grpc"
 	"reflect"
@@ -90,7 +91,7 @@ func getConnByServerName() *grpc.ClientConn {
 
 // Invoke 具体调用
 func invoke(cc *grpc.ClientConn, int interface{}, ctx context.Context, method string, result interface{}, params ...interface{}) error {
-	out := new(HugoResponse)
+	out := new(xgrpc.HugoResponse)
 	par := make([]string, 0)
 	//request data
 	data, err := json.Marshal(params)
@@ -98,7 +99,7 @@ func invoke(cc *grpc.ClientConn, int interface{}, ctx context.Context, method st
 		return errors.New(err.Error())
 	}
 	par = append(par, string(data))
-	request := &HugoRequest{MethodName: method, Parameters: par}
+	request := &xgrpc.HugoRequest{MethodName: method, Parameters: par}
 	//获取类型
 	elem := reflect.TypeOf(int).Elem()
 	//定义服务调用的地址
@@ -108,7 +109,7 @@ func invoke(cc *grpc.ClientConn, int interface{}, ctx context.Context, method st
 	if err != nil {
 		return err
 	}
-	if err := ChickResponse(out); err != nil {
+	if err := xgrpc.ChickResponse(out); err != nil {
 		return err
 	}
 	//判断返回的是否有数据
