@@ -2,21 +2,11 @@ package xnacos_registry
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/brian-god/brian-go/pkg/client/xnacos_client"
-	"github.com/brian-god/brian-go/pkg/logger"
 	"github.com/brian-god/brian-go/pkg/server"
-	"github.com/brian-god/brian-go/pkg/xcodec"
-	"github.com/nacos-group/nacos-sdk-go/clients"
-	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
-	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/sirupsen/logrus"
-	"sync"
-	"time"
 )
 
 /**
@@ -91,5 +81,5 @@ func (e *nacosRegister) DeregisterService(ctx context.Context, info *server.Serv
 
 // Close ...
 func (e *nacosRegister) Close() error {
-
+	return nil
 }

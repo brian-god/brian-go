@@ -3,7 +3,8 @@ package xhttp
 import (
 	"fmt"
 	"github.com/brian-god/brian-go/pkg/conf"
-	"github.com/brian-god/brian-go/pkg/xcast"
+	"github.com/brian-god/brian-go/pkg/logger"
+	"github.com/brian-god/brian-go/pkg/xcodec"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,13 +22,14 @@ import (
 
 // HTTP config
 type Config struct {
-	Host          string
-	Port          int
-	Debug         bool
-	DisableMetric bool
-	DisableTrace  bool
+	Host          string `properties:"brian.http.server.host"`
+	Port          int    `properties:"brian.http.server.port"`
+	Debug         bool   `properties:"brian.http.server.debug"`
+	DisableMetric bool   `properties:"brian.http.server.DisableMetric"`
+	DisableTrace  bool   `properties:"brian.http.server.DisableTrace"`
+	logLevel      string `properties:"brian.http.log.level"`
 
-	SlowQueryThresholdInMilli int64
+	SlowQueryThresholdInMilli int64 `properties:"brian.http.server.timeout"`
 	//TODO 日志
 	logger *logrus.Logger
 }
@@ -40,6 +42,7 @@ func DefaultConfig() *Config {
 		Debug:                     false,
 		SlowQueryThresholdInMilli: 500, // 500ms
 		logger:                    logrus.New(),
+		logLevel:                  "info",
 	}
 }
 
@@ -51,37 +54,44 @@ func StdConfig(name string) *Config {
 // RawConfig ...
 func RawConfig(key string) *Config {
 	var config = DefaultConfig()
-	//端口
-	if v := conf.Get("brian.http.server.port"); v != nil {
+	/*//端口
+	if v := conf.Get(xcodec.HttpSeverPort); v != nil {
 		if v, err := xcast.ToIntE(v); nil == err {
 			config.Port = v
 		}
 	}
 	//ip
-	if v := conf.Get("brian.http.server.host"); v != nil {
+	if v := conf.Get(xcodec.HttpSeverHost); v != nil {
 		if v, err := xcast.ToStringE(v); nil == err {
 			config.Host = v
 		}
 	}
 	//debug
-	if v := conf.Get("brian.http.server.debug"); v != nil {
+	if v := conf.Get(xcodec.HttpServerDebug); v != nil {
 		if v, err := xcast.ToBoolE(v); nil == err {
 			config.Debug = v
 		}
 	}
 	//超时
-	if v := conf.Get("brian.http.server.timeout"); v != nil {
+	if v := conf.Get(xcodec.HttpSeverTimeout); v != nil {
 		if v, err := xcast.ToInt64E(v); nil == err {
 			config.SlowQueryThresholdInMilli = v
 		}
 	}
 	//日志级别
-	if v := conf.Get("brian.http.server.log.level"); v != nil {
+	if v := conf.Get(xcodec.HttpSeverLogLevel); v != nil {
 		if v, err := xcast.ToStringE(v); nil == err {
 			if level, err := logrus.ParseLevel(v); nil == err {
 				config.logger.Level = level
 			}
 		}
+	}*/
+	err := conf.Unmarshal(config)
+	if nil != err {
+		logrus.Panic("Unmarshal config ", logger.FieldMod(xcodec.ModConfig), logger.FieldErrKind(xcodec.ErrKindUnmarshalConfigErr), logger.FieldErr(err))
+	}
+	if level, err := logrus.ParseLevel(config.logLevel); nil == err {
+		config.logger.Level = level
 	}
 	return config
 }

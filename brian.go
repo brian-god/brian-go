@@ -114,7 +114,7 @@ func (app *Application) startup() (err error) {
 func (app *Application) initLogger() error {
 	logrus.SetOutput(os.Stdout)
 	//日志级别
-	if v := conf.Get("brian.application.log.level"); v != nil {
+	if v := conf.Get(xcodec.ApplicationLoglevel); v != nil {
 		if v, err := xcast.ToStringE(v); nil == err {
 			if level, err := logrus.ParseLevel(v); nil == err {
 				logrus.SetLevel(level)
@@ -321,12 +321,15 @@ func (app *Application) loadConfig() error {
 				if !ok {
 					return nil
 				} else {
+					conf.SetConfigType("properties")
 					configAddr = fmt.Sprintf("%s/resources/application.properties", dir)
 				}
 			} else {
+				conf.SetConfigType("yml")
 				configAddr = fmt.Sprintf("%s/resources/application.yml", dir)
 			}
 		} else {
+			conf.SetConfigType("yml")
 			configAddr = fmt.Sprintf("%s/botostrop.yml", dir)
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/brian-god/brian-go/pkg/conf"
 	"github.com/brian-god/brian-go/pkg/xcast"
+	"github.com/brian-god/brian-go/pkg/xcodec"
 	"github.com/labstack/gommon/color"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -74,43 +75,43 @@ func StdConfig() *Config {
 func RawConfig() *Config {
 	var config = DefaultConfig()
 	//协议
-	if v := conf.Get("brian.rpc.server.Network"); v != nil {
+	if v := conf.Get(xcodec.RpcSeverNetwork); v != nil {
 		if v, err := xcast.ToStringE(v); nil == err {
 			config.Network = v
 		}
 	}
 	//端口
-	if v := conf.Get("brian.rpc.server.port"); v != nil {
+	if v := conf.Get(xcodec.RpcSeverPort); v != nil {
 		if intValue, err := xcast.ToIntE(v); nil == err {
 			config.Port = intValue
 		}
 	}
 	//ip
-	if v := conf.Get("brian.rpc.server.host"); v != nil {
+	if v := conf.Get(xcodec.RpcSeverHost); v != nil {
 		if v, err := xcast.ToStringE(v); nil == err {
 			config.Host = v
 		}
 	}
 	//监听
-	if v := conf.Get("brian.rpc.server.DisableMetric"); v != nil {
+	if v := conf.Get(xcodec.RpcSeverDisableMetric); v != nil {
 		if v, err := xcast.ToBoolE(v); nil == err {
 			config.DisableMetric = v
 		}
 	}
 	//追踪
-	if v := conf.Get("brian.rpc.server.DisableTrace"); v != nil {
+	if v := conf.Get(xcodec.RpcSeverDisableTrace); v != nil {
 		if v, err := xcast.ToBoolE(v); nil == err {
 			config.DisableTrace = v
 		}
 	}
 	//超时
-	if v := conf.Get("brian.rpc.server.timeout"); v != nil {
+	if v := conf.Get(xcodec.RpcSeverTimeout); v != nil {
 		if v, err := xcast.ToInt64E(v); nil == err {
 			config.SlowQueryThresholdInMilli = v
 		}
 	}
 	//日志级别
-	if v := conf.Get("brian.rpc.server.log.level"); v != nil {
+	if v := conf.Get(xcodec.RpcSeverLogLevel); v != nil {
 		if v, err := xcast.ToStringE(v); nil == err {
 			if level, err := logrus.ParseLevel(v); nil == err {
 				config.logger.Level = level

@@ -62,7 +62,7 @@ func (fp *fileDataSource) ReadConfig() (content []byte, err error) {
 	}
 	//获取文件名称
 	fileName := f.Name()
-	//是否是properties
+	//是否是properties 暂时只支持properties
 	if strings.HasSuffix(fileName, ".properties") {
 		data, readErr := conf.ReadConfigKeyValue(f)
 		if nil != readErr {

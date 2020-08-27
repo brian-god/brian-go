@@ -1,6 +1,9 @@
 package xnacos_registry
 
-import "github.com/brian-god/brian-go/pkg/conf"
+import (
+	"github.com/brian-god/brian-go/pkg/conf"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+)
 
 /**
  *
@@ -13,14 +16,10 @@ import "github.com/brian-god/brian-go/pkg/conf"
  * @updateDate           2020/8/26 4:23 下午
  * @version              1.0
 **/
-// StdConfig ...
-func StdConfig(name string) *Config {
-	return RawConfig("jupiter.registry." + name)
-}
 
 // RawConfig ...
-func RawConfig(key string) *Config {
-	var config = DefaultConfig()
+func RawServerConfig() *constant.ServerConfig {
+	var config = DefaultServerConfigs()
 	// 解析最外层配置
 	if err := conf.UnmarshalKey(key, &config); err != nil {
 		xlog.Panic("unmarshal key", xlog.FieldMod("registry.etcd"), xlog.FieldErrKind(ecode.ErrKindUnmarshalConfigErr), xlog.FieldErr(err), xlog.String("key", key), xlog.Any("config", config))

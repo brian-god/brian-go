@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/brian-god/brian-go/pkg/xcast"
 	"reflect"
 	"strconv"
 )
@@ -57,6 +58,76 @@ const (
 	ModClientMySQL = "client.mysql"
 	// ModRegistryNacos ...
 	ModRegistryNacos = "registry.nacos"
+)
+
+/**
+#http开启debug
+brian.http.server.debug= false
+#超时默认500
+brian.http.server.timeout= 500
+#http服务的日志级别
+brian.http.server.log.level= debug
+
+#rpc服务的端口
+brian.rpc.server.port= 9081
+#rpc的ip默认127.0.0.1
+brian.rpc.server.host= 127.0.0.1
+#rpc的网络默认tcp4
+brian.rpc.server.Network= tcp4
+#禁用监听默认为禁用
+brian.rpc.server.DisableMetric= true
+#禁用跟踪器默认为禁用
+brian.rpc.server.DisableTrace= true
+#超时默认500
+brian.rpc.server.timeout= 500
+#rpc服务的日志级别
+brian.rpc.server.log.level= debug
+*/
+
+const FrameName = "brian"
+const (
+	//应用名称
+	ApplicationName = FrameName + ".application.name"
+	//应用全局日志级别
+	ApplicationLoglevel = FrameName + ".log.level"
+
+	//http服务的端口
+	HttpSeverPort = FrameName + ".http.server.port"
+	//http服务的地址
+	HttpSeverHost = FrameName + ".http.server.host"
+	//http开启debug
+	HttpServerDebug = FrameName + ".http.server.debug"
+	//超时默认500
+	HttpSeverTimeout = FrameName + ".http.server.timeout"
+	//http服务的日志级别
+	HttpSeverLogLevel = FrameName + ".http.server.log.level"
+
+	//rpc服务的端口
+	RpcSeverPort = FrameName + ".rpc.server.port"
+	//rpc服务的地址
+	RpcSeverHost = FrameName + ".rpc.server.host"
+	//rpc开启debug
+	RpcServerDebug = FrameName + ".rpc.server.debug"
+	//超时默认500
+	RpcSeverTimeout = FrameName + ".rpc.server.timeout"
+	//rpc的网络默认tcp4
+	RpcSeverNetwork = FrameName + ".rpc.server.Network"
+	//禁用监听默认为禁用
+	RpcSeverDisableMetric = FrameName + ".rpc.server.DisableMetric"
+	//禁用跟踪器默认为禁用
+	RpcSeverDisableTrace = FrameName + ".rpc.server.DisableTrace"
+	//rpc服务的日志级别
+	RpcSeverLogLevel = FrameName + ".rpc.server.log.level"
+
+	//注册中心
+	//注册中心类型
+	RegistryType = FrameName + ".registry.type"
+	//注册中心的ContextPath
+	RegistryContextPath = FrameName + ".registry.ContextPath"
+	//注册中心的ip
+	RegistryAddress = FrameName + ".registry.address"
+	//注册中心的端口
+	RegistryPort = FrameName + ".registry.port"
 )
 
 // UnmarshalByType 反序列化根据类型
@@ -272,6 +343,94 @@ func UnmarshalStruct(data interface{}, dataType reflect.Type) (reflect.Value, er
 		}
 	}
 	return dataValue, nil
+}
+
+func BasicUnmarshalByType1(data interface{}, tp reflect.Type) (interface{}, error) {
+	switch tp.Kind() {
+	case reflect.Int:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return v, nil
+	case reflect.Int8:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return int8(v), nil
+	case reflect.Int16:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return int16(v), nil
+	case reflect.Int32:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return int32(v), nil
+	case reflect.Int64:
+		v, err := xcast.ToInt64E(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return v, nil
+	case reflect.Uint:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return uint(v), nil
+	case reflect.Uint8:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return uint8(v), nil
+	case reflect.Uint16:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return uint64(v), nil
+	case reflect.Uint32:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return uint32(v), nil
+	case reflect.Uint64:
+		v, err := xcast.ToIntE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return uint64(v), nil
+	case reflect.Float32:
+		v, err := xcast.ToFloat64E(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return float32(v), nil
+	case reflect.Float64:
+		v, err := xcast.ToFloat64E(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return v, nil
+	case reflect.String:
+		return xcast.ToString(data), nil
+	case reflect.Bool:
+		v, err := xcast.ToBoolE(data)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return v, nil
+	default:
+		return nil, errors.New(fmt.Sprintf("无法解析参数，类型为：%s", tp.Kind().String()))
+	}
+	return nil, nil
 }
 
 //	Bool
