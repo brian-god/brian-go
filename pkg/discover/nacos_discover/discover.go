@@ -20,16 +20,16 @@ import (
  */
 
 // nacos的实体
-type nacoseDiscover struct {
+type NacoseDiscover struct {
 	naming_client.INamingClient
 }
 
-func newNacoseDiscover(client *xnacos_client.NacosClient) *nacoseDiscover {
-	return &nacoseDiscover{client.GetNamingClient()}
+func CreateNacoseDiscover(client *xnacos_client.NacosClient) *NacoseDiscover {
+	return &NacoseDiscover{client.GetNamingClient()}
 }
 
 // 服务发现
-func (n nacoseDiscover) GetServerInstance(con context.Context, param *discover.ServerInstancesParam) (*server.ServiceInfo, error) {
+func (n NacoseDiscover) GetServerInstance(con context.Context, param *discover.ServerInstancesParam) (*server.ServiceInfo, error) {
 	// SelectOneHealthyInstance将会按加权随机轮训的负载均衡策略返回一个健康的实例
 	// 实例必须满足的条件：health=true,enable=true and weight>0
 	instance, err := n.SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{

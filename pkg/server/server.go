@@ -32,5 +32,5 @@ type Server interface {
 	Serve() error
 	Stop() error
 	GracefulStop(ctx context.Context) error
-	Info() *ServiceInfo
+	Info(group, cluster string) *ServiceInfo
 }

@@ -22,14 +22,16 @@ import (
 
 // HTTP config
 type Config struct {
-	Host          string `properties:"brian.http.server.host"`
-	Port          int    `properties:"brian.http.server.port"`
-	Debug         bool   `properties:"brian.http.server.debug"`
-	DisableMetric bool   `properties:"brian.http.server.DisableMetric"`
-	DisableTrace  bool   `properties:"brian.http.server.DisableTrace"`
-	logLevel      string `properties:"brian.http.log.level"`
-
-	SlowQueryThresholdInMilli int64 `properties:"brian.http.server.timeout"`
+	//服务名称
+	Name                      string  `properties:"brian.http.server.name"`
+	Host                      string  `properties:"brian.http.server.host"`
+	Port                      int     `properties:"brian.http.server.port"`
+	Debug                     bool    `properties:"brian.http.server.debug"`
+	DisableMetric             bool    `properties:"brian.http.server.DisableMetric"`
+	DisableTrace              bool    `properties:"brian.http.server.DisableTrace"`
+	logLevel                  string  `properties:"brian.http.log.level"`
+	Weight                    float64 `properties:"brian.http.server.registry.weight"`
+	SlowQueryThresholdInMilli int64   `properties:"brian.http.server.timeout"`
 	//TODO 日志
 	logger *logrus.Logger
 }

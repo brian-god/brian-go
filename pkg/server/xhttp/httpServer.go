@@ -2,7 +2,6 @@ package xhttp
 
 import (
 	"context"
-	"github.com/brian-god/brian-go/pkg"
 	"github.com/brian-god/brian-go/pkg/logger"
 	"github.com/brian-god/brian-go/pkg/server"
 	"github.com/brian-god/brian-go/pkg/xcodec"
@@ -16,7 +15,7 @@ import (
 // http Server struct
 type Server struct {
 	*echo.Echo
-	config   *Config
+	Config   *Config
 	listener net.Listener
 }
 
@@ -28,7 +27,7 @@ func newServer(config *Config) *Server {
 	config.Port = listener.Addr().(*net.TCPAddr).Port
 	return &Server{
 		Echo:     echo.New(),
-		config:   config,
+		Config:   config,
 		listener: listener,
 	}
 }
@@ -36,13 +35,13 @@ func newServer(config *Config) *Server {
 // Server implements server.Server interface.
 func (s *Server) Serve() error {
 	s.Echo.Logger.SetOutput(os.Stdout)
-	s.Echo.Debug = s.config.Debug
+	s.Echo.Debug = s.Config.Debug
 	s.Echo.HideBanner = true
 	//TODO std日志
 	s.Echo.StdLogger = log.New(os.Stdout, "hugo", 1)
 	for _, route := range s.Echo.Routes() {
 		//输出地址信息和处理的方法
-		s.config.logger.Info("add route", logger.FieldMethod(route.Method), logger.String("path", route.Path))
+		s.Config.logger.Info("add route", logger.FieldMethod(route.Method), logger.String("path", route.Path))
 	}
 	s.Echo.Listener = s.listener
 	err := s.Echo.Start("")
@@ -50,7 +49,7 @@ func (s *Server) Serve() error {
 		return err
 	}
 
-	s.config.logger.Info("close echo", logger.FieldAddr(s.config.Address()))
+	s.Config.logger.Info("close echo", logger.FieldAddr(s.Config.Address()))
 	return nil
 }
 
@@ -72,20 +71,22 @@ func (s *Server) GracefulStop(ctx context.Context) error {
 
 // Info returns server info, used by governor and consumer balancer
 // 初始化服务信息
-func (s *Server) Info() *server.ServiceInfo {
-	return &server.ServiceInfo{
-		Name:      pkg.Name(),
-		Scheme:    "http",
-		IP:        s.config.Host,
-		Port:      s.config.Port,
-		Weight:    0.0,
-		Enable:    false,
-		Healthy:   false,
-		Metadata:  map[string]string{},
-		Region:    "",
-		Zone:      "",
-		GroupName: "",
+func (s *Server) Info(group, cluster string) *server.ServiceInfo {
+	//注http服务
+	httpSeverConfig := s.Config
+	httpParam := &server.ServiceInfo{
+		Name:        httpSeverConfig.Name,
+		Scheme:      httpSeverConfig.Name,
+		IP:          httpSeverConfig.Host,
+		Port:        httpSeverConfig.Port,
+		Weight:      httpSeverConfig.Weight,
+		Enable:      true,
+		Healthy:     true,
+		Ephemeral:   true,
+		GroupName:   group,
+		ClusterName: cluster,
 	}
+	return httpParam
 }
 
 //向服务中注册控制器

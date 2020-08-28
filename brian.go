@@ -4,11 +4,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/BurntSushi/toml"
+	"github.com/brian-god/brian-go/pkg/client/xnacos_client"
 	"github.com/brian-god/brian-go/pkg/conf"
 	file_datasource "github.com/brian-god/brian-go/pkg/datasource/file"
 	http_datasource "github.com/brian-god/brian-go/pkg/datasource/http"
+	"github.com/brian-god/brian-go/pkg/discover"
+	"github.com/brian-god/brian-go/pkg/discover/nacos_discover"
 	"github.com/brian-god/brian-go/pkg/group"
 	"github.com/brian-god/brian-go/pkg/logger"
+	"github.com/brian-god/brian-go/pkg/registry"
+	"github.com/brian-god/brian-go/pkg/registry/xnacos_registry"
 	"github.com/brian-god/brian-go/pkg/server"
 	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
@@ -45,8 +50,15 @@ type Application struct {
 	governor *http.Server
 	colorer  *color.Color
 
-	httpServer *xhttp.Server
-	rpcServer  *xgrpc.Server
+	httpServer           *xhttp.Server
+	rpcServer            *xgrpc.Server
+	registry             registry.Registry
+	discover             discover.Discover
+	registryConfig       *registry.RegistryConfig
+	Name                 string `properties:"brian.application.name"`                  //应用名称
+	LogLevel             string `properties:"brian.application.log.level"`             // 日志级别
+	EnableRpcServer      bool   `properties:"brian.application.enable.RpcServer"`      //是否开启rpc服务
+	EnableRegistryCenter bool   `properties:"brian.application.enable.RegistryCenter"` //是否启用注册中心
 }
 
 // 初始化应用
@@ -62,16 +74,64 @@ func (app *Application) initialize() {
 // 获取默认的应用
 func DefaultApplication() *Application {
 	//开始使用默认的
-	app := &Application{colorer: color.New(), logger: logrus.New()}
+	app := &Application{colorer: color.New(), logger: logrus.New(), Name: "brian", LogLevel: "info", EnableRpcServer: false, EnableRegistryCenter: false}
 	//打印logo
 	app.printBanner()
-	//加载配置
-	app.loadConfig()
+	//调用应用初始化的方法
+	app.initialize()
+	//默认启动方式不进行配置加载
+	//app.loadConfig()
 	//创建http服务
-	app.serverHTTP()
-	//创建rpc服务
-	app.serveGRPC()
+	app.defaultServerHTTP()
+	//判断是否需要开启rpc服务
+	if app.EnableRpcServer {
+		//创建rpc服务
+		app.defaultServeGRPC()
+	}
 	return app
+}
+
+// 创建一个读取配置文件的application
+func RewConfigApplication() *Application {
+	//开始使用默认的
+	app := &Application{colorer: color.New(), logger: logrus.New(), Name: "brian", LogLevel: "info", EnableRpcServer: false, EnableRegistryCenter: false}
+	//打印logo
+	app.printBanner()
+	//调用应用初始化的方法
+	app.initialize()
+	//配置加载
+	app.loadConfig()
+	//读取配置文件中对应用的配置
+	if err := conf.Unmarshal(app); err != nil {
+		logrus.Panic("read app config  error", logger.FieldMod(xcodec.ModApp), logger.FieldErrKind(xcodec.ReadAppConfigErr), logger.FieldErr(err))
+	}
+	//创建读取配置http服务
+	app.serverHTTP()
+	//判断是否需要开启rpc服务
+	if app.EnableRpcServer {
+		//创建读取配置rpc服务
+		app.serveGRPC()
+	}
+	//设置应用的日志级别
+	if level, err := logrus.ParseLevel(app.LogLevel); nil == err {
+		app.logger.Level = level
+	}
+	//判断应用是否开启注册中心
+	if app.EnableRegistryCenter {
+		//初始化配置中心
+		app.registryCenter()
+		//进行服务的注册
+		//app.registryServer()
+	}
+	return app
+}
+
+//默认配置启动rpc服务
+func (app *Application) defaultServeGRPC() error {
+	//获取一个grpc服务
+	rpcServer := xgrpc.DefaultConfig().Build()
+	app.rpcServer = rpcServer
+	return app.Serve(rpcServer)
 }
 
 //rpc服务
@@ -79,7 +139,7 @@ func (app *Application) serveGRPC() error {
 	//获取一个grpc服务
 	rpcServer := xgrpc.StdConfig().Build()
 	app.rpcServer = rpcServer
-	return nil
+	return app.Serve(rpcServer)
 }
 
 // RegisterRpcServer 注册rpc服务
@@ -92,11 +152,18 @@ func (app *Application) RegisterController(con xhttp.Controller) {
 	app.httpServer.UseController(con)
 }
 
+//使用默认配置启动http服务
+func (app *Application) defaultServerHTTP() error {
+	httpServer := xhttp.DefaultConfig().Build()
+	app.httpServer = httpServer
+	return app.Serve(httpServer)
+}
+
 //http服务
 func (app *Application) serverHTTP() error {
 	httpServer := xhttp.StdConfig("http").Build()
 	app.httpServer = httpServer
-	return nil
+	return app.Serve(httpServer)
 }
 
 // 启动应用内部方法
@@ -111,6 +178,138 @@ func (app *Application) startup() (err error) {
 	return
 }
 
+//创建注册中心
+func (app *Application) registryCenter() {
+	registryConfig, err := registry.RewConfig()
+	//是否的能够获取到配置文件
+	if nil != err {
+		app.logger.Panic(logger.FieldMod(xcodec.ModRegistry), logger.FieldErrKind(xcodec.ReadRegistryConfigErr), logger.FieldErr(err))
+	}
+	//将注册中心的配置信息放入应用中
+	app.registryConfig = registryConfig
+	//获取配置中心的类型
+	if xcodec.Nacos == registryConfig.Type {
+		//nacos
+		nacosConfig := xnacos_client.NewNacosClientConfig(registryConfig)
+		nacosServerConfig := xnacos_registry.NacosServerConfigs(registryConfig)
+		//创建一个nacos的client
+		nacosClient, err1 := xnacos_client.NewNacosClient(nacosConfig, nacosServerConfig)
+		if nil != err1 {
+			app.logger.Panic("create nacos client error ", logger.FieldMod(xcodec.ModConfig), logger.FieldErr(err))
+		}
+		//获取注册中心
+		app.registry = xnacos_registry.CreateNacosRegister(nacosClient)
+		app.discover = nacos_discover.CreateNacoseDiscover(nacosClient)
+	}
+}
+
+/*//注册服务
+func (app *Application) registryServer()  {
+	//注册http服务
+	httpSeverConfig := app.httpServer.Config
+	//获取服务名称
+	httpServerName := httpSeverConfig.Name
+	if httpServerName == ""{
+		httpServerName = app.Name
+	}
+	registryConfig := app.registryConfig
+	httpParam := &server.ServiceInfo{
+		Name:httpServerName,
+		Scheme:httpServerName,
+		IP :httpSeverConfig.Host,
+		Port:httpSeverConfig.Port,
+		Weight:httpSeverConfig.Weight,
+		Enable:true,
+		Healthy:true,
+		Ephemeral:true,
+		GroupName:registryConfig.GroupName,
+		ClusterName:registryConfig.ClusterName,
+	}
+	//注册服务
+	if err:=app.registry.RegisterService(context.Background(),httpParam);err != nil {
+		app.logger.Panic("registry http server error ", logger.FieldMod(xcodec.ModRegistry), logger.FieldErr(err))
+	}
+	//启用了rpc服务才进行rpc服务的注册
+	if app.EnableRpcServer {
+		//注册rpc服务
+		rpcServer := app.rpcServer
+		//获取服务名称
+		rpcServerName := rpcServer.Name
+		if httpServerName == ""{
+			rpcServerName = app.Name+"-rpc"
+		}
+		rpcParam := &server.ServiceInfo{
+			Name:rpcServerName,
+			Scheme:rpcServerName,
+			IP :rpcServer.Host,
+			Port:rpcServer.Port,
+			Weight:rpcServer.Weight,
+			Enable:true,
+			Healthy:true,
+			Ephemeral:true,
+			GroupName:registryConfig.GroupName,
+			ClusterName:registryConfig.ClusterName,
+		}
+		//注册服务
+		if err:=app.registry.RegisterService(context.Background(),rpcParam);err != nil {
+			app.logger.Panic("registry http server error ", logger.FieldMod(xcodec.ModRegistry), logger.FieldErr(err))
+		}
+	}
+}
+
+//注销册服务
+func (app *Application) deregisterService()  {
+	//注http服务
+	httpSeverConfig := app.httpServer.Config
+	//获取服务名称
+	httpServerName := httpSeverConfig.Name
+	if httpServerName == ""{
+		httpServerName = app.Name
+	}
+	registryConfig := app.registryConfig
+	httpParam := &server.ServiceInfo{
+		Name:httpServerName,
+		Scheme:httpServerName,
+		IP :httpSeverConfig.Host,
+		Port:httpSeverConfig.Port,
+		Weight:httpSeverConfig.Weight,
+		Enable:true,
+		Healthy:true,
+		Ephemeral:true,
+		GroupName:registryConfig.GroupName,
+		ClusterName:registryConfig.ClusterName,
+	}
+	//注销服务
+	if err:=app.registry.DeregisterService(context.Background(),httpParam);err != nil {
+		app.logger.Panic("deregister http server error ", logger.FieldMod(xcodec.ModRegistry), logger.FieldErr(err))
+	}
+	//启用了rpc服务才进行rpc服务的注销
+	if app.EnableRpcServer {
+		//注销rpc服务
+		rpcServer := app.rpcServer
+		//获取服务名称
+		rpcServerName := rpcServer.Name
+		if httpServerName == ""{
+			rpcServerName = app.Name+"-rpc"
+		}
+		rpcParam := &server.ServiceInfo{
+			Name:rpcServerName,
+			Scheme:rpcServerName,
+			IP :rpcServer.Host,
+			Port:rpcServer.Port,
+			Weight:rpcServer.Weight,
+			Enable:true,
+			Healthy:true,
+			Ephemeral:true,
+			GroupName:registryConfig.GroupName,
+			ClusterName:registryConfig.ClusterName,
+		}
+		//注销服务
+		if err:=app.registry.DeregisterService(context.Background(),rpcParam);err != nil {
+			app.logger.Panic("deregister http server error ", logger.FieldMod(xcodec.ModRegistry), logger.FieldErr(err))
+		}
+	}
+}*/
 func (app *Application) initLogger() error {
 	logrus.SetOutput(os.Stdout)
 	//日志级别
@@ -127,8 +326,6 @@ func (app *Application) initLogger() error {
 
 //提供外部启动应用执行
 func (app *Application) Startup(fns ...func() error) error {
-	//调用应用初始化的方法
-	app.initialize()
 	if err := app.startup(); err != nil {
 		return err
 	}
@@ -140,17 +337,17 @@ func (app *Application) GracefulStop(ctx context.Context) (err error) {
 	app.beforeStop()
 	app.stopOnce.Do(func() {
 		//清理注册中心
-		/*err = app.registerer.Close()
+		err = app.registry.Close()
 		if err != nil {
-			app.logger.Error("graceful stop register close err", xlog.FieldMod(ecode.ModApp), xlog.FieldErr(err))
+			app.logger.Errorf("graceful stop register close err", logger.FieldMod(xcodec.ModApp), logger.FieldErr(err))
 		}
-		err = app.governor.Close()
+		/*err = app.governor.Close()
 		if err != nil {
 			app.logger.Error("graceful stop governor close err", xlog.FieldMod(ecode.ModApp), xlog.FieldErr(err))
 		}*/
 		var eg errgroup.Group
 		//停止http服务
-		if app.httpServer != nil {
+		/*if app.httpServer != nil {
 			eg.Go(func() error {
 				return app.httpServer.GracefulStop(ctx)
 			})
@@ -160,7 +357,7 @@ func (app *Application) GracefulStop(ctx context.Context) (err error) {
 			eg.Go(func() error {
 				return app.rpcServer.GracefulStop(ctx)
 			})
-		}
+		}*/
 		for _, s := range app.servers {
 			s := s
 			eg.Go(func() error {
@@ -187,13 +384,13 @@ func (app *Application) Stop() (err error) {
 		}*/
 		var eg errgroup.Group
 		//停止http服务
-		if app.httpServer != nil {
+		/*if app.httpServer != nil {
 			eg.Go(app.httpServer.Stop)
 		}
 		//停止rpc服务
 		if app.rpcServer != nil {
 			eg.Go(app.rpcServer.Stop)
-		}
+		}*/
 		for _, s := range app.servers {
 			s := s
 			eg.Go(s.Stop)
@@ -220,9 +417,9 @@ func (app *Application) Run() error {
 		}
 	}*/
 	//注册
-	/*if app.registerer == nil {
-		app.registerer = registry.Nop{}
-	}*/
+	if app.registry == nil {
+		app.registry = registry.Nop{}
+	}
 
 	app.signalHooker(app)
 
@@ -249,9 +446,10 @@ func (app *Application) startWorkers() error {
 
 // 启动服务
 func (app *Application) startServers() error {
+	registryConfig := app.registryConfig
 	var eg errgroup.Group
 	//启动http服务
-	if app.httpServer != nil {
+	/*if app.httpServer != nil {
 		eg.Go(func() (err error) {
 			return app.httpServer.Serve()
 		})
@@ -261,16 +459,20 @@ func (app *Application) startServers() error {
 		eg.Go(func() (err error) {
 			return app.rpcServer.Serve()
 		})
-	}
-	//xgo.ParallelWithErrorChan()
+	}*/
+	xgo.ParallelWithErrorChan()
 	// start multi servers
 	for _, s := range app.servers {
 		s := s
 		eg.Go(func() (err error) {
-			//_ = app.registerer.RegisterService(context.TODO(), s.Info())
-			//defer app.registerer.DeregisterService(context.TODO(), s.Info())
-			//app.logger.Info("start servers", xlog.FieldMod(ecode.ModApp), xlog.FieldAddr(s.Info().Label()), xlog.Any("scheme", s.Info().Scheme))
-			//defer app.logger.Info("exit server", xlog.FieldMod(ecode.ModApp), xlog.FieldErr(err), xlog.FieldAddr(s.Info().Label()))
+			serverInfo := s.Info(registryConfig.GroupName, registryConfig.ClusterName)
+			//注册服务
+			_ = app.registry.RegisterService(context.TODO(), serverInfo)
+			//注销服务
+			defer app.registry.DeregisterService(context.TODO(), serverInfo)
+			//defer app.registry.DeregisterService(context.TODO(), serverInfo)
+			app.logger.Info("start servers", logger.FieldMod(xcodec.ModApp), logger.FieldAddr(serverInfo.Label()), logger.Any("scheme", serverInfo.Scheme))
+			defer app.logger.Info("exit server", logger.FieldMod(xcodec.ModApp), logger.FieldErr(err), logger.FieldAddr(serverInfo.Label()))
 			return s.Serve()
 		})
 	}
@@ -288,6 +490,10 @@ func (app *Application) clean() {
 	//_ = xlog.JupiterLogger.Flush()
 }
 func (app *Application) beforeStop() {
+	if app.EnableRegistryCenter {
+		app.logger.Info("停止服务并注销注册中心的服务")
+		//app.deregisterService()
+	}
 	// 应用停止之前的处理
 	//app.logger.Info("leaving jupiter, bye....", xlog.FieldMod(ecode.ModApp))
 }

@@ -22,6 +22,8 @@ import (
 const (
 	// ErrKindUnmarshalConfigErr ...
 	ErrKindUnmarshalConfigErr = "unmarshal config err"
+	ReadAppConfigErr          = "read app config err"
+	ReadRegistryConfigErr     = "read registry config err"
 	// ErrKindRegisterErr ...
 	ErrKindRegisterErr = "register err"
 	// ErrKindUriErr ...
@@ -58,31 +60,9 @@ const (
 	ModClientMySQL = "client.mysql"
 	// ModRegistryNacos ...
 	ModRegistryNacos = "registry.nacos"
+	// ModRegistry
+	ModRegistry = "registry"
 )
-
-/**
-#http开启debug
-brian.http.server.debug= false
-#超时默认500
-brian.http.server.timeout= 500
-#http服务的日志级别
-brian.http.server.log.level= debug
-
-#rpc服务的端口
-brian.rpc.server.port= 9081
-#rpc的ip默认127.0.0.1
-brian.rpc.server.host= 127.0.0.1
-#rpc的网络默认tcp4
-brian.rpc.server.Network= tcp4
-#禁用监听默认为禁用
-brian.rpc.server.DisableMetric= true
-#禁用跟踪器默认为禁用
-brian.rpc.server.DisableTrace= true
-#超时默认500
-brian.rpc.server.timeout= 500
-#rpc服务的日志级别
-brian.rpc.server.log.level= debug
-*/
 
 const FrameName = "brian"
 const (
@@ -128,6 +108,13 @@ const (
 	RegistryAddress = FrameName + ".registry.address"
 	//注册中心的端口
 	RegistryPort = FrameName + ".registry.port"
+)
+
+//配置中心类型
+const (
+	Nacos     = "nacos"
+	Etcd      = "etcd"
+	Zookppeer = "zookppeer"
 )
 
 // UnmarshalByType 反序列化根据类型

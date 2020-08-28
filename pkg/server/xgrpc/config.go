@@ -3,7 +3,7 @@ package xgrpc
 import (
 	"fmt"
 	"github.com/brian-god/brian-go/pkg/conf"
-	"github.com/brian-god/brian-go/pkg/xcast"
+	"github.com/brian-god/brian-go/pkg/logger"
 	"github.com/brian-god/brian-go/pkg/xcodec"
 	"github.com/labstack/gommon/color"
 	"github.com/sirupsen/logrus"
@@ -24,22 +24,26 @@ import (
 // TODO 日志需要单独处理
 //Grpc 的配置结构体
 type Config struct {
-	Host string
-	Port int
+	Name string `properties:"brian.rpc.server.name"`
+	Host string `properties:"brian.rpc.server.host"`
+	Port int    `properties:"brian.rpc.server.port"`
 	// Network network type, tcp4 by default
-	Network string `json:"network" toml:"network"`
+	Network string `properties:"brian.rpc.server.Network"`
 	// DisableTrace disbale Trace Interceptor, false by default
 	//禁用跟踪器默认为true
-	DisableTrace bool
+	DisableTrace bool `properties:"brian.rpc.server.DisableTrace"`
 	// DisableMetric disable Metric Interceptor, false by default
 	//禁用监听器默认为true
-	DisableMetric bool
+	DisableMetric bool `properties:"brian.rpc.server.DisableMetric"`
 	// SlowQueryThresholdInMilli, request will be colored if cost over this threshold value
-	SlowQueryThresholdInMilli int64
-	serverOptions             []grpc.ServerOption
-	streamInterceptors        []grpc.StreamServerInterceptor
-	unaryInterceptors         []grpc.UnaryServerInterceptor
-	colorer                   *color.Color
+	SlowQueryThresholdInMilli int64 `properties:"brian.rpc.server.timeout"`
+	//日志级别
+	logLevel           string  `properties:"brian.rpc.server.log.level"`
+	Weight             float64 `properties:"brian.rpc.server.registry.weight"`
+	serverOptions      []grpc.ServerOption
+	streamInterceptors []grpc.StreamServerInterceptor
+	unaryInterceptors  []grpc.UnaryServerInterceptor
+	colorer            *color.Color
 	//TODO 日志
 	logger *logrus.Logger
 }
@@ -75,7 +79,7 @@ func StdConfig() *Config {
 func RawConfig() *Config {
 	var config = DefaultConfig()
 	//协议
-	if v := conf.Get(xcodec.RpcSeverNetwork); v != nil {
+	/*if v := conf.Get(xcodec.RpcSeverNetwork); v != nil {
 		if v, err := xcast.ToStringE(v); nil == err {
 			config.Network = v
 		}
@@ -117,6 +121,13 @@ func RawConfig() *Config {
 				config.logger.Level = level
 			}
 		}
+	}*/
+	err := conf.Unmarshal(config)
+	if nil != err {
+		logrus.Panic("Unmarshal config ", logger.FieldMod(xcodec.ModConfig), logger.FieldErrKind(xcodec.ErrKindUnmarshalConfigErr), logger.FieldErr(err))
+	}
+	if level, err := logrus.ParseLevel(config.logLevel); nil == err {
+		config.logger.Level = level
 	}
 	return config
 }

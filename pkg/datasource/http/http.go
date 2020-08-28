@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/brian-god/brian-go/pkg/xgo"
+	"github.com/brian-god/brian-go/pkg/utils/xgo"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 	"net/url"

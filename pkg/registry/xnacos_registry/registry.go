@@ -2,7 +2,9 @@ package xnacos_registry
 
 import (
 	"context"
+	"fmt"
 	"github.com/brian-god/brian-go/pkg/client/xnacos_client"
+	"github.com/brian-god/brian-go/pkg/registry"
 	"github.com/brian-god/brian-go/pkg/server"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -20,31 +22,30 @@ import (
  * @updateDate           2020/8/21 9:25 上午
  * @version              1.0
 **/
-
 // nacos的实体
-type nacosRegister struct {
+type NacosRegistery struct {
 	naming_client.INamingClient
 }
 
-func newNacosRegister(client *xnacos_client.NacosClient) *nacosRegister {
-	return &nacosRegister{client.GetNamingClient()}
+func CreateNacosRegister(client *xnacos_client.NacosClient) *NacosRegistery {
+	return &NacosRegistery{client.GetNamingClient()}
 }
 
 //DefaultClientConfig创建一个默认的sever配置
-func DefaultServerConfigs() []constant.ServerConfig {
+func NacosServerConfigs(config *registry.RegistryConfig) []constant.ServerConfig {
 	// 至少一个ServerConfig
 	serverConfigs := []constant.ServerConfig{
 		{
-			IpAddr:      "127.0.0.1",
-			ContextPath: "/nacos",
-			Port:        80,
+			IpAddr:      config.IpAddr,
+			ContextPath: config.ContextPath,
+			Port:        config.Port,
 		},
 	}
 	return serverConfigs
 }
 
 // RegisterService ... 服务注册
-func (e *nacosRegister) RegisterService(ctx context.Context, info *server.ServiceInfo) error {
+func (e *NacosRegistery) RegisterService(ctx context.Context, info *server.ServiceInfo) error {
 	ok, err := e.RegisterInstance(vo.RegisterInstanceParam{
 		Ip:          info.IP,
 		Port:        uint64(info.Port),
@@ -64,7 +65,7 @@ func (e *nacosRegister) RegisterService(ctx context.Context, info *server.Servic
 }
 
 // DeregisterService ... 注销服务
-func (e *nacosRegister) DeregisterService(ctx context.Context, info *server.ServiceInfo) error {
+func (e *NacosRegistery) DeregisterService(ctx context.Context, info *server.ServiceInfo) error {
 	ok, err := e.DeregisterInstance(vo.DeregisterInstanceParam{
 		Ip:          info.IP,
 		Port:        uint64(info.Port),
@@ -74,12 +75,13 @@ func (e *nacosRegister) DeregisterService(ctx context.Context, info *server.Serv
 		GroupName:   info.GroupName,   // 默认值DEFAULT_GROUP
 	})
 	if !ok {
-		return err
+		fmt.Println(err)
+		return nil
 	}
 	return nil
 }
 
 // Close ...
-func (e *nacosRegister) Close() error {
+func (e *NacosRegistery) Close() error {
 	return nil
 }

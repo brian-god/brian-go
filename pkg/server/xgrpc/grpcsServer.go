@@ -3,7 +3,6 @@ package xgrpc
 import (
 	"context"
 	"fmt"
-	"github.com/brian-god/brian-go/pkg"
 	"github.com/brian-god/brian-go/pkg/logger"
 	"github.com/brian-god/brian-go/pkg/server"
 	"github.com/brian-god/brian-go/pkg/xcodec"
@@ -100,20 +99,20 @@ func (s *Server) GracefulStop(ctx context.Context) error {
 
 // Info returns server info, used by governor and consumer balancer
 // 初始化服务信息
-func (s *Server) Info() *server.ServiceInfo {
-	return &server.ServiceInfo{
-		Name:      pkg.Name(),
-		Scheme:    "grpc",
-		IP:        s.Host,
-		Port:      s.Port,
-		Weight:    0.0,
-		Enable:    true,
-		Healthy:   true,
-		Metadata:  map[string]string{},
-		Region:    "",
-		Zone:      "",
-		GroupName: "",
+func (s *Server) Info(group, cluster string) *server.ServiceInfo {
+	rpcParam := &server.ServiceInfo{
+		Name:        s.Name,
+		Scheme:      s.Name,
+		IP:          s.Host,
+		Port:        s.Port,
+		Weight:      s.Weight,
+		Enable:      true,
+		Healthy:     true,
+		Ephemeral:   true,
+		GroupName:   group,
+		ClusterName: cluster,
 	}
+	return rpcParam
 }
 
 //写一个服务注册的方法

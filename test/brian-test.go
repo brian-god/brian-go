@@ -8,6 +8,10 @@ import (
 	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/labstack/echo/v4"
+	"github.com/nacos-group/nacos-sdk-go/clients"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -52,9 +56,21 @@ func main() {
 		fmt.Println("启动有误")
 	}
 	ser.Run()*/
-	runApp()
+	//nacos()
+	runConfigApp()
 }
 
+func runConfigApp() {
+	app := brian.RewConfigApplication()
+	//注册rpc服务
+	app.RegisterRpcServer(new(TestApi), new(TestApiImpl))
+	//注册http controller
+	app.RegisterController(&TestController{})
+	if err := app.Startup(); err != nil {
+		fmt.Println("启动有误")
+	}
+	app.Run()
+}
 func runApp() {
 	app := brian.DefaultApplication()
 	//注册rpc服务
@@ -69,6 +85,53 @@ func runApp() {
 func Hello() error {
 	fmt.Printf("你好")
 	return nil
+}
+func nacos() {
+	clientConfig := constant.ClientConfig{
+		TimeoutMs:           5000,
+		NotLoadCacheAtStart: true,
+		LogDir:              "/tmp/nacos/log",
+		CacheDir:            "/tmp/nacos/cache",
+		RotateTime:          "1h",
+		MaxAge:              3,
+		LogLevel:            "debug",
+		//Username: "nacos",
+		//Password: "nacos",
+	}
+
+	// 至少一个ServerConfig
+	serverConfigs := []constant.ServerConfig{
+		{
+			IpAddr:      "localhost",
+			ContextPath: "/nacos",
+			Port:        8848,
+		},
+	}
+
+	// 创建服务发现客户端
+	namingClient, err := clients.CreateNamingClient(map[string]interface{}{
+		constant.KEY_SERVER_CONFIGS: serverConfigs,
+		constant.KEY_CLIENT_CONFIG:  clientConfig,
+	})
+	if nil != err {
+		logrus.Panic(err.Error())
+	}
+	success, err := namingClient.RegisterInstance(vo.RegisterInstanceParam{
+		Ip:          "10.0.0.11",
+		Port:        8848,
+		ServiceName: "demo.go",
+		Weight:      10,
+		Enable:      true,
+		Healthy:     true,
+		Ephemeral:   true,
+		Metadata:    map[string]string{"idc": "shanghai"},
+		ClusterName: "cluster-a", // 默认值DEFAULT
+		GroupName:   "group-a",   // 默认值DEFAULT_GROUP
+	})
+	if !success {
+		logrus.Panic(err.Error())
+	}
+	fmt.Println(namingClient)
 }
 
 //rpc服务
