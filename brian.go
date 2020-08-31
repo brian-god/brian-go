@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/BurntSushi/toml"
+	"github.com/brian-god/brian-go/pkg/client/xgrpc_client"
 	"github.com/brian-god/brian-go/pkg/client/xnacos_client"
 	"github.com/brian-god/brian-go/pkg/conf"
 	file_datasource "github.com/brian-god/brian-go/pkg/datasource/file"
@@ -124,6 +125,11 @@ func RewConfigApplication() *Application {
 		//进行服务的注册
 		//app.registryServer()
 	}
+	//判断是否启用客户端链接
+	if app.EnableServerClient {
+		//初始化客户端链接
+		app.initRpcClient()
+	}
 	return app
 }
 
@@ -179,6 +185,11 @@ func (app *Application) startup() (err error) {
 	return
 }
 
+//初始化客户端链接
+func (app *Application) initRpcClient() {
+	xgrpc_client.InitServerGrpcClient(app.discover, app.registryConfig)
+}
+
 //创建注册中心
 func (app *Application) registryCenter() {
 	registryConfig, err := registry.RewConfig()
@@ -200,6 +211,7 @@ func (app *Application) registryCenter() {
 		}
 		//获取注册中心
 		app.registry = xnacos_registry.CreateNacosRegister(nacosClient)
+		//获取服务发现的客户端
 		app.discover = nacos_discover.CreateNacoseDiscover(nacosClient)
 	}
 }

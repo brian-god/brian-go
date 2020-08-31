@@ -25,7 +25,7 @@ type ServerInstancesParam struct {
 // Discover register/deregister service
 // Discover impl should control rpc timeout
 type Discover interface {
-	GetServerInstance(con context.Context, param *ServerInstancesParam) (*server.ServiceInfo, error)
+	GetServerInstance(con context.Context, param *ServerInstancesParam) ([]*server.ServiceInfo, error)
 }
 
 // Nop Discover, used for local development/debugging
@@ -33,6 +33,6 @@ type Discover interface {
 type Nop struct{}
 
 // RegisterService ...
-func (n Nop) GetServerInstance(con context.Context, param *ServerInstancesParam) (*server.ServiceInfo, error) {
+func (n Nop) GetServerInstance(con context.Context, param *ServerInstancesParam) ([]*server.ServiceInfo, error) {
 	return nil, nil
 }

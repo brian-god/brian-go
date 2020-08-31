@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/brian-god/brian-go"
+	"github.com/brian-god/brian-go/pkg/client/xgrpc_client"
 	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
+	"github.com/brian-god/brian-go/test/api"
 	"github.com/labstack/echo/v4"
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -58,12 +60,23 @@ func main() {
 	ser.Run()*/
 	//nacos()
 	runConfigApp()
+	//and()
+}
+
+var serverClient *xgrpc_client.ConnGrpcClient
+
+func and() {
+	fmt.Println(nil == serverClient)
+	/*for i:=0;i<100;i++{
+		b := rand.Intn(100)  //生成0-99之间的随机数
+		fmt.Println(b)
+	}*/
 }
 
 func runConfigApp() {
 	app := brian.RewConfigApplication()
 	//注册rpc服务
-	app.RegisterRpcServer(new(TestApi), new(TestApiImpl))
+	app.RegisterRpcServer(new(api.TestApi), new(TestApiImpl))
 	//注册http controller
 	app.RegisterController(&TestController{})
 	if err := app.Startup(); err != nil {
@@ -74,7 +87,7 @@ func runConfigApp() {
 func runApp() {
 	app := brian.DefaultApplication()
 	//注册rpc服务
-	app.RegisterRpcServer(new(TestApi), new(TestApiImpl))
+	app.RegisterRpcServer(new(api.TestApi), new(TestApiImpl))
 	//注册http controller
 	app.RegisterController(&TestController{})
 	if err := app.Startup(); err != nil {
@@ -149,7 +162,7 @@ func nacos() {
 func serveGRPC() error {
 	//获取一个grpc服务
 	grpcServer := xgrpc.DefaultConfig().Build()
-	grpcServer.Register(new(TestApi), new(TestApiImpl))
+	grpcServer.Register(new(api.TestApi), new(TestApiImpl))
 	//注册服务
 	return ser.Serve(grpcServer)
 }
@@ -173,9 +186,6 @@ func (g Greeter) SayHello(context context.Context, request *helloworld.HelloRequ
 	}, nil
 }
 
-type TestApi interface {
-	SayHello(name string) string
-}
 type TestApiImpl struct {
 }
 
