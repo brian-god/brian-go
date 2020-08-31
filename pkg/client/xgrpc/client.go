@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/brian-god/brian-go/pkg/discover"
 	"github.com/brian-god/brian-go/pkg/server/xgrpc"
 	"github.com/brian-god/brian-go/pkg/xcodec"
 	"google.golang.org/grpc"
@@ -38,6 +39,8 @@ type GrpcClient interface {
 // ConnGrpcClient 需要传入构建好的链接进行服务的调用
 type ConnGrpcClient struct {
 	cc *grpc.ClientConn
+	//服务发现
+	discover *discover.Discover
 }
 
 // ServerGrpcClient 服务使用的客户端
@@ -45,8 +48,8 @@ type ServerGrpcClient struct {
 }
 
 //创建客户端
-func NewConnGrpcClient(cc *grpc.ClientConn) *ConnGrpcClient {
-	return &ConnGrpcClient{cc}
+func NewConnGrpcClient(dis *discover.Discover) *ConnGrpcClient {
+	return &ConnGrpcClient{discover: dis}
 }
 
 //创建客户端

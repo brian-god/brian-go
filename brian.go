@@ -59,6 +59,7 @@ type Application struct {
 	LogLevel             string `properties:"brian.application.log.level"`             // 日志级别
 	EnableRpcServer      bool   `properties:"brian.application.enable.RpcServer"`      //是否开启rpc服务
 	EnableRegistryCenter bool   `properties:"brian.application.enable.RegistryCenter"` //是否启用注册中心
+	EnableServerClient   bool   `properties:"brian.application.enable.ServerClient"`   //是否开启客户端链接
 }
 
 // 初始化应用
