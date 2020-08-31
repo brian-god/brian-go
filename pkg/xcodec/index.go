@@ -62,6 +62,7 @@ const (
 	ModRegistryNacos = "registry.nacos"
 	// ModRegistry
 	ModRegistry = "registry"
+	ModWork     = "work"
 )
 
 const FrameName = "brian"

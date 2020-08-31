@@ -20,6 +20,7 @@ import (
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
 	"github.com/brian-god/brian-go/pkg/utils/xgo"
 	"github.com/brian-god/brian-go/pkg/worker"
+	"github.com/brian-god/brian-go/pkg/worker/task"
 	"github.com/brian-god/brian-go/pkg/xcast"
 	"github.com/brian-god/brian-go/pkg/xcodec"
 	"github.com/brian-god/brian-go/pkg/xfile"
@@ -31,6 +32,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Application is the framework's instance, it contains the servers, workers, client and configuration settings.
@@ -77,7 +79,7 @@ func (app *Application) initialize() {
 // 获取默认的应用
 func DefaultApplication() *Application {
 	//开始使用默认的
-	app := &Application{colorer: color.New(), logger: logrus.New(), Name: "brian", LogLevel: "info", EnableRpcServer: false, EnableRegistryCenter: false}
+	app := &Application{colorer: color.New(), logger: logrus.New(), Name: "brian", LogLevel: "info", EnableRpcServer: false, EnableRegistryCenter: false, RefreshTime: 15}
 	//打印logo
 	app.printBanner()
 	//调用应用初始化的方法
@@ -97,7 +99,7 @@ func DefaultApplication() *Application {
 // 创建一个读取配置文件的application
 func RewConfigApplication() *Application {
 	//开始使用默认的
-	app := &Application{colorer: color.New(), logger: logrus.New(), Name: "brian", LogLevel: "info", EnableRpcServer: false, EnableRegistryCenter: false}
+	app := &Application{colorer: color.New(), logger: logrus.New(), Name: "brian", LogLevel: "info", EnableRpcServer: false, EnableRegistryCenter: false, RefreshTime: 15}
 	//打印logo
 	app.printBanner()
 	//调用应用初始化的方法
@@ -130,6 +132,8 @@ func RewConfigApplication() *Application {
 	if app.EnableServerClient {
 		//初始化客户端链接
 		app.initRpcClient()
+		//刷新本地服务列表
+		app.refreshServers()
 	}
 	return app
 }
@@ -513,6 +517,37 @@ func (app *Application) beforeStop() {
 	//app.logger.Info("leaving jupiter, bye....", xlog.FieldMod(ecode.ModApp))
 }
 
+//刷新本地服务列表
+func (app *Application) refreshServers() {
+	backTask := task.BackgroundTask{}
+	backTask.Time1 = time.Duration(app.RefreshTime) * time.Second
+	backTask.AddJob(func() error {
+		xgrpc_client.RangeConns(func(key, value interface{}) bool {
+			//将map的key转为string
+			name := key.(string)
+			//通过遍历查询服务列表
+			servers, err := app.discover.GetServerInstance(context.Background(), &discover.ServerInstancesParam{
+				ServiceName: name,
+				GroupName:   app.registryConfig.GroupName,
+				Clusters:    nil,
+			})
+			if err != nil {
+				app.logger.Error("  refresh local server list  ", logger.FieldMod(xcodec.ModWork), fmt.Sprintf("server name %s", key), logger.Error(err))
+				return false
+			}
+			_, err1 := xgrpc_client.ChangeServerCons(name, servers)
+			if err1 != nil {
+				app.logger.Error("  refresh local server list  ", logger.FieldMod(xcodec.ModWork), fmt.Sprintf("server name %s", key), logger.Error(err1))
+				return false
+			}
+			app.logger.Info("  refresh local server list  ", logger.FieldMod(xcodec.ModWork), fmt.Sprintf("server name %s", key))
+			return true
+		})
+		return nil
+	})
+	app.Work(&backTask)
+}
+
 //deregisterService 进行服务注册
 func (app *Application) deregisterService() {
 	registryConfig := app.registryConfig
@@ -528,6 +563,12 @@ func (app *Application) deregisterService() {
 //注册服务
 func (app *Application) Serve(s server.Server) error {
 	app.servers = append(app.servers, s)
+	return nil
+}
+
+//注册工作刘
+func (app *Application) Work(w worker.Worker) error {
+	app.workers = append(app.workers, w)
 	return nil
 }
 

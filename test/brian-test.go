@@ -107,11 +107,11 @@ func nacos() {
 	clientConfig := constant.ClientConfig{
 		TimeoutMs:           5000,
 		NotLoadCacheAtStart: true,
-		LogDir:              "/tmp/nacos/log",
-		CacheDir:            "/tmp/nacos/cache",
-		RotateTime:          "1h",
-		MaxAge:              3,
-		LogLevel:            "debug",
+		/*LogDir:              "/tmp/nacos/log",
+		CacheDir:            "/tmp/nacos/cache",*/
+		RotateTime: "1h",
+		MaxAge:     3,
+		LogLevel:   "debug",
 		//Username: "nacos",
 		//Password: "nacos",
 	}

@@ -66,11 +66,11 @@ func DefaultConfig() *RegistryConfig {
 		Port:                80, // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
 		TimeoutMs:           5000,
 		NotLoadCacheAtStart: true,
-		LogDir:              "/tmp/nacos/log",
-		CacheDir:            "/tmp/nacos/cache",
-		RotateTime:          "1h",
-		MaxAge:              3,
-		LogLevel:            "debug",
+		/*	LogDir:              "/tmp/nacos/log",
+			CacheDir:            "/tmp/nacos/cache",*/
+		RotateTime: "1h",
+		MaxAge:     3,
+		LogLevel:   "debug",
 	}
 }
 

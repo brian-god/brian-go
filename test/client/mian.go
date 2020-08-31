@@ -6,9 +6,13 @@ import (
 	"github.com/brian-god/brian-go"
 	"github.com/brian-god/brian-go/pkg/client/xgrpc_client"
 	"github.com/brian-god/brian-go/pkg/server/xhttp"
+	"github.com/brian-god/brian-go/pkg/worker/task"
 	"github.com/brian-god/brian-go/test/api"
 	"github.com/labstack/echo/v4"
+	"github.com/robfig/cron"
+	"log"
 	"net/http"
+	"time"
 )
 
 /**
@@ -47,9 +51,32 @@ func (test *ClientController) index(ctx echo.Context) error {
 }
 func main() {
 	//获取客户端链接
-	runConfigApp()
+	//runConfigApp()
+	time2()
 }
 
+func time2() {
+	backTask := task.BackgroundTask{}
+	backTask.Time1 = time.Duration(1) * time.Second
+	backTask.AddJob(func() error {
+		fmt.Println("后台任务执行")
+		return nil
+	})
+	backTask.Run()
+	time.Sleep(time.Second * 90)
+}
+func time1() {
+	i := 0
+	c := cron.New()
+	spec := "*/5 * * * * ?"
+	c.AddFunc(spec, func() {
+		i++
+		log.Println("cron running:", i)
+	})
+	c.Start()
+	c.Stop()
+	time.Sleep(time.Second * 30)
+}
 func runConfigApp() {
 	app := brian.RewConfigApplication()
 	app.RegisterController(&ClientController{})

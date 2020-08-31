@@ -62,8 +62,13 @@ func BrianGrpcClient() (*ServerGrpcClient, error) {
 	return serverClient, nil
 }
 
-//改变服务的链接
-func (c *ServerGrpcClient) ChangeServerCons(serverName string, servers []*server.ServiceInfo) ([]*grpc.ClientConn, error) {
+// RangeConns 遍历本地所有服务
+func RangeConns(f func(key, value interface{}) bool) {
+	conn.Range(f)
+}
+
+// ChangeServerCons 改变服务的链接
+func ChangeServerCons(serverName string, servers []*server.ServiceInfo) ([]*grpc.ClientConn, error) {
 	var conns []*grpc.ClientConn
 	//通过遍历实例获取创建链接
 	for _, v := range servers {
@@ -225,7 +230,7 @@ func (c *ServerGrpcClient) getConnByServerName(serverName string) ([]*grpc.Clien
 	if len(servers) <= 0 {
 		return nil, errors.New(fmt.Sprintf("Can not  ServerInstance by server name: %s ", serverName))
 	}
-	return c.ChangeServerCons(serverName, servers)
+	return ChangeServerCons(serverName, servers)
 }
 
 // Invoke 具体调用

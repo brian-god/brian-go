@@ -4,6 +4,7 @@ import (
 	"github.com/brian-god/brian-go/pkg/xcast"
 	"github.com/sirupsen/logrus"
 	"strings"
+	"time"
 )
 
 /**
@@ -55,6 +56,13 @@ func Error(err error) logrus.Fields {
 // FieldKey ...
 func FieldKey(value string) logrus.Fields {
 	return String("key", value)
+}
+
+func NowTime() logrus.Fields {
+	now := time.Now()
+	// 24小时制
+	value := now.Format("2006-01-02 15:04:05.000 Mon Jan")
+	return String("time", value)
 }
 
 // NamedError constructs a field that lazily stores err.Error() under the
