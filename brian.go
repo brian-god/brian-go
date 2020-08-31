@@ -469,10 +469,10 @@ func (app *Application) startServers() error {
 			//注册服务
 			_ = app.registry.RegisterService(context.TODO(), serverInfo)
 			//注销服务
-			defer app.registry.DeregisterService(context.TODO(), serverInfo)
+			//defer app.registry.DeregisterService(context.TODO(), serverInfo)
 			//defer app.registry.DeregisterService(context.TODO(), serverInfo)
 			app.logger.Info("start servers", logger.FieldMod(xcodec.ModApp), logger.FieldAddr(serverInfo.Label()), logger.Any("scheme", serverInfo.Scheme))
-			defer app.logger.Info("exit server", logger.FieldMod(xcodec.ModApp), logger.FieldErr(err), logger.FieldAddr(serverInfo.Label()))
+			//defer app.logger.Info("exit server", logger.FieldMod(xcodec.ModApp), logger.FieldErr(err), logger.FieldAddr(serverInfo.Label()))
 			return s.Serve()
 		})
 	}
@@ -492,10 +492,23 @@ func (app *Application) clean() {
 func (app *Application) beforeStop() {
 	if app.EnableRegistryCenter {
 		app.logger.Info("停止服务并注销注册中心的服务")
-		//app.deregisterService()
+		//注销服务
+		app.deregisterService()
 	}
 	// 应用停止之前的处理
 	//app.logger.Info("leaving jupiter, bye....", xlog.FieldMod(ecode.ModApp))
+}
+
+//deregisterService 进行服务注册
+func (app *Application) deregisterService() {
+	registryConfig := app.registryConfig
+	for _, s := range app.servers {
+		//获取服务信息
+		serverInfo := s.Info(registryConfig.GroupName, registryConfig.ClusterName)
+		//注销服务
+		err := app.registry.DeregisterService(context.TODO(), serverInfo)
+		app.logger.Info("exit server", logger.FieldMod(xcodec.ModApp), logger.FieldErr(err), logger.FieldAddr(serverInfo.Label()))
+	}
 }
 
 //注册服务

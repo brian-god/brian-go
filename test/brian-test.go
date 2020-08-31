@@ -131,6 +131,17 @@ func nacos() {
 	if !success {
 		logrus.Panic(err.Error())
 	}
+	success1, err1 := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
+		Ip:          "10.0.0.11",
+		Port:        8848,
+		ServiceName: "demo.go",
+		Ephemeral:   true,
+		Cluster:     "cluster-a", // 默认值DEFAULT
+		GroupName:   "group-a",   // 默认值DEFAULT_GROUP
+	})
+	if !success1 {
+		logrus.Panic(err1.Error())
+	}
 	fmt.Println(namingClient)
 }
 

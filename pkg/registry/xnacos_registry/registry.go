@@ -2,7 +2,6 @@ package xnacos_registry
 
 import (
 	"context"
-	"fmt"
 	"github.com/brian-god/brian-go/pkg/client/xnacos_client"
 	"github.com/brian-god/brian-go/pkg/registry"
 	"github.com/brian-god/brian-go/pkg/server"
@@ -75,8 +74,7 @@ func (e *NacosRegistery) DeregisterService(ctx context.Context, info *server.Ser
 		GroupName:   info.GroupName,   // 默认值DEFAULT_GROUP
 	})
 	if !ok {
-		fmt.Println(err)
-		return nil
+		return err
 	}
 	return nil
 }
