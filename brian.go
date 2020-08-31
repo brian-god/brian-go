@@ -61,6 +61,7 @@ type Application struct {
 	EnableRpcServer      bool   `properties:"brian.application.enable.RpcServer"`      //是否开启rpc服务
 	EnableRegistryCenter bool   `properties:"brian.application.enable.RegistryCenter"` //是否启用注册中心
 	EnableServerClient   bool   `properties:"brian.application.enable.ServerClient"`   //是否开启客户端链接
+	RefreshTime          int    `properties:"brian.application.servers.refresh.time"`  //本地服务列表刷新时间
 }
 
 // 初始化应用

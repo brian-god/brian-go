@@ -15,6 +15,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 var ser = brian.Application{}
@@ -66,7 +67,10 @@ func main() {
 var serverClient *xgrpc_client.ConnGrpcClient
 
 func and() {
-	fmt.Println(nil == serverClient)
+	ticker := time.NewTicker(time.Second * 2)
+	for _ = range ticker.C {
+		fmt.Printf("ticked at %v\n", time.Now())
+	}
 	/*for i:=0;i<100;i++{
 		b := rand.Intn(100)  //生成0-99之间的随机数
 		fmt.Println(b)
